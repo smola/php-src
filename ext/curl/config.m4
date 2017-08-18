@@ -6,6 +6,41 @@ PHP_ARG_WITH(curl, for cURL support,
 [  --with-curl[=DIR]         Include cURL support])
 
 if test "$PHP_CURL" != "no"; then
+  if test -z "$PKG_CONFIG"; then
+    AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+  fi
+
+  if test -x "$PKG_CONFIG"; then
+    dnl using pkg-config output
+
+    AC_MSG_CHECKING(for libcurl.pc)
+    if test "$PHP_CURL" == "yes"; then
+      PKNAME=libcurl
+      AC_MSG_RESULT(using default path)
+    elif test -r $PHP_CURL/$PHP_LIBDIR/pkgconfig/libcurl.pc; then
+      PKNAME=$PHP_CURL/$PHP_LIBDIR/pkgconfig/libcurl.pc
+      AC_MSG_RESULT(using $PKNAME)
+    elif test -r $PHP_CURL/lib/pkgconfig/libcurl.pc; then
+      PKNAME=$PHP_CURL/lib/pkgconfig/libcurl.pc
+      AC_MSG_RESULT(using $PKNAME)
+    else
+      AC_MSG_ERROR(Could not find libcurl.pc)
+    fi
+
+    AC_MSG_CHECKING(for cURL 7.10.5 or greater)
+    if $PKG_CONFIG --atleast-version 7.10.5 $PKNAME; then
+      curl_version_full=`$PKG_CONFIG --modversion $PKNAME`
+      AC_MSG_RESULT($curl_version_full)
+    else
+      AC_MSG_ERROR(cURL version 7.10.5 or later is required to compile php with cURL support)
+    fi
+
+    CURL_LIBS=`$PKG_CONFIG --libs   $PKNAME`
+    CURL_INCL=`$PKG_CONFIG --cflags $PKNAME`
+    CURL_SSL=`$PKG_CONFIG --variable=supported_features $PKNAME| $EGREP SSL`
+  else
+    dnl fallback to old vay, using curl-config
+
   if test -r $PHP_CURL/include/curl/easy.h; then
     CURL_DIR=$PHP_CURL
   else
@@ -41,22 +76,27 @@ if test "$PHP_CURL" != "no"; then
   if test "$curl_version" -ge 7010005; then
     AC_MSG_RESULT($curl_version_full)
     CURL_LIBS=`$CURL_CONFIG --libs`
+      CURL_INCL=`$CURL_CONFIG --cflags`
+      CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
   else
     AC_MSG_ERROR(cURL version 7.10.5 or later is required to compile php with cURL support)
   fi
+  fi
 
-  PHP_ADD_INCLUDE($CURL_DIR/include)
+  dnl common stuff (pkg-config / curl-config)
+
   PHP_EVAL_LIBLINE($CURL_LIBS, CURL_SHARED_LIBADD)
-  PHP_ADD_LIBRARY_WITH_PATH(curl, $CURL_DIR/$PHP_LIBDIR, CURL_SHARED_LIBADD)
+  PHP_EVAL_INCLINE($CURL_INCL, CURL_SHARED_LIBADD)
   
   AC_MSG_CHECKING([for SSL support in libcurl])
-  CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
-  if test "$CURL_SSL" = "SSL"; then
+  if test -n "$CURL_SSL"; then
     AC_MSG_RESULT([yes])
     AC_DEFINE([HAVE_CURL_SSL], [1], [Have cURL with  SSL support])
    
     save_CFLAGS="$CFLAGS"
-    CFLAGS="`$CURL_CONFIG --cflags`"
+    CFLAGS=$CURL_INCL
+    save_LDFLAGS="$CFLAGS"
+    LDFLAGS=$CURL_LIBS
    
     AC_PROG_CPP
     AC_MSG_CHECKING([for openssl support in libcurl])
@@ -124,21 +164,21 @@ int main(int argc, char *argv[])
   ],[
     AC_MSG_ERROR(There is something wrong. Please check config.log for more information.)
   ],[
-    $CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR
+    $CURL_LIBS
   ])
 
   PHP_CHECK_LIBRARY(curl,curl_easy_strerror,
   [
     AC_DEFINE(HAVE_CURL_EASY_STRERROR,1,[ ])
   ],[],[
-    $CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR
+    $CURL_LIBS
   ])
 
   PHP_CHECK_LIBRARY(curl,curl_multi_strerror,
   [
     AC_DEFINE(HAVE_CURL_MULTI_STRERROR,1,[ ])
   ],[],[
-    $CURL_LIBS -L$CURL_DIR/$PHP_LIBDIR
+    $CURL_LIBS
   ])
 
   PHP_NEW_EXTENSION(curl, interface.c multi.c share.c curl_file.c, $ext_shared)
