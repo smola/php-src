@@ -3321,3 +3321,6 @@ dnl Load the AX_CHECK_COMPILE_FLAG macro from the autoconf archive.
 m4_include([build/ax_check_compile_flag.m4])
 
 m4_include([build/ax_gcc_func_attribute.m4])
+
+dnl Load pkg-config macros
+m4_include([build/pkg.m4])
