@@ -1,0 +1,68 @@
+name: ci
+on:
+  push:
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - 'ubuntu:20.04'
+    name: "test linux ${{ matrix.distro }}"
+    container:
+      image: "${{ matrix.distro }}"
+      options: "--privileged"
+      env:
+        DEBIAN_FRONTEND: nointeractive
+        # avoid tests that fail on CI
+        SKIP_IO_CAPTURE_TESTS: 1
+        SKIP_ONLINE_TESTS: 1
+        SKIP_SLOW_TESTS: 1
+        TRAVIS: "true"
+        NO_INTERACTION: 1
+        REPORT_EXIT_STATUS: 1
+        TEST_PHP_ARGS: " -g 'FAIL,XFAIL,BORK,WARN,LEAK,SKIP'"
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            autoconf \
+            bison \
+            build-essential \
+            locales \
+            openssl \
+            re2c \
+            libaspell-dev \
+            libbz2-dev \
+            libcurl4-gnutls-dev \
+            libedit-dev \
+            libenchant-dev \
+            libfreetype6-dev \
+            libgmp-dev \
+            libicu-dev \
+            libjpeg-dev \
+            libkrb5-dev \
+            libonig-dev \
+            libpng-dev \
+            libpq-dev \
+            libpspell-dev \
+            libreadline-dev \
+            libsasl2-dev \
+            libsqlite3-dev \
+            libsodium-dev \
+            libssl-dev \
+            libtidy-dev \
+            libwebp-dev \
+            libxml2-dev \
+            libxpm-dev \
+            libxslt1-dev \
+            libzip-dev
+      - run: ./travis/compile.sh
+      #FIXME: - run: make -j $(nproc) test
+      - name: "run tests"
+        run: |
+          JOBS=$(nproc)
+          sapi/cli/php run-tests.php -P -d extension=`pwd`/modules/zend_test.so $(if [ $ENABLE_DEBUG == 0 ]; then echo "-d opcache.enable_cli=1 -d opcache.protect_memory=1 -d opcache.jit_buffer_size=16M -d zend_extension=`pwd`/modules/opcache.so"; fi) -g "FAIL,XFAIL,BORK,WARN,LEAK,SKIP" --offline --show-diff --show-slow 1000 --set-timeout 120 -j$JOBS
+          sapi/cli/php -d extension_dir=`pwd`/modules -r 'dl("zend_test");'
