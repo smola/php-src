@@ -1,10 +1,11 @@
 #!/bin/bash
+set -ex
 if [[ "$ENABLE_MAINTAINER_ZTS" == 1 ]]; then
 	TS="--enable-maintainer-zts";
 else
 	TS="";
 fi
-if [[ "$ENABLE_DEBUG" == 1 ]]; then
+if [ "$ENABLE_DEBUG" = 1 ]; then
 	DEBUG="--enable-debug";
 else
 	DEBUG="";
