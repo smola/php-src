@@ -1,15 +1,16 @@
-#!/bin/bash
-if [[ "$ENABLE_ZTS" == 1 ]]; then
+#!/bin/sh
+set -ex
+if [ "$ENABLE_ZTS" = 1 ]; then
 	TS="--enable-zts";
 else
 	TS="";
 fi
-if [[ "$ENABLE_DEBUG" == 1 ]]; then
+if [ "$ENABLE_DEBUG" = 1 ]; then
 	DEBUG="--enable-debug";
 else
 	DEBUG="";
 fi
-if [[ "$S390X" == 1 ]]; then
+if [ "$S390X" = 1 ]; then
 	S390X_CONFIG="--without-pcre-jit";
 else
 	S390X_CONFIG="";
@@ -70,7 +71,7 @@ $S390X_CONFIG \
 --enable-werror \
 --with-pear
 
-if [[ -z "$CONFIG_ONLY" ]]; then
+if [ -z "$CONFIG_ONLY" ]; then
 	MAKE_JOBS=${MAKE_JOBS:-$(nproc)}
 	make "-j${MAKE_JOBS}" $MAKE_QUIET
 	make install
