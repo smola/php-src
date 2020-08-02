@@ -26,6 +26,9 @@ fi
 
 MAKE_JOBS=${MAKE_JOBS:-$(nproc)}
 
+#XXX: Disable IPv6 on GitHub Actions, failing test:
+# tests/socket_sendrecvmsg_multi_msg.phpt
+
 ./buildconf --force
 ./configure \
 --enable-option-checking=fatal \
@@ -33,6 +36,7 @@ MAKE_JOBS=${MAKE_JOBS:-$(nproc)}
 $CONFIG_QUIET \
 $DEBUG \
 $TS \
+--disable-ipv6 \
 --enable-phpdbg \
 --enable-fpm \
 --with-pdo-mysql=mysqlnd \
