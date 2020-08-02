@@ -16,6 +16,9 @@ else
 	S390X_CONFIG="";
 fi
 
+#XXX: Disable IPv6 on GitHub Actions, failing test:
+# tests/socket_sendrecvmsg_multi_msg.phpt
+
 ./buildconf --force
 ./configure \
 --enable-option-checking=fatal \
@@ -24,6 +27,7 @@ $CONFIG_QUIET \
 $DEBUG \
 $TS \
 $S390X_CONFIG \
+--disable-ipv6 \
 --enable-phpdbg \
 --enable-fpm \
 --with-pdo-mysql=mysqlnd \
