@@ -82,7 +82,7 @@ $TS \
 --with-ffi \
 --with-sodium \
 --enable-zend-test=shared \
---enable-werror \
+--disable-werror \
 --with-pear
 
 make "-j${MAKE_JOBS}" $MAKE_QUIET
